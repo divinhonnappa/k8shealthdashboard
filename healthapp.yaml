@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: healthapp
+  name: healthapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: healthapp
+  template:
+    metadata:
+      labels:
+        app: healthapp
+    spec:
+      containers:
+      - image: dhonnappa/k8shealth
+        name: k8shealth
+        volumeMounts:
+          - mountPath: /app/config
+            name: "kubeconfigvolume"
+      nodeSelector:
+        healthapp: "yes"
+      tolerations:
+      - effect: "NoSchedule"
+        key: "node.kubernetes.io/unschedulable"
+        operator: "Exists"
+      volumes:
+        - name: "kubeconfigvolume"
+          hostPath:
+            path: /path/to/access/kubeconfig/on/node
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: healthapp
+  name: healthapp
+spec:
+  ports:
+  - port: 8000
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: healthapp
+  type: LoadBalancer

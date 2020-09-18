@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+          integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <meta charset="UTF-8">
+    <title>{% block title %}k8s Health Dashboard{% endblock %}</title>
+    <style>
+        header {
+          background-color: black;
+          padding: 1px;
+          text-align: center;
+          font-size: 1px;
+          color:white;
+        }
+        table, th, td {
+          border: 1px solid black;
+        }
+        .tab {
+          overflow: hidden;
+          border: 2px solid ;
+        }
+
+        .tab button {
+          background-color: #f1f1f1;
+          float: left;
+          border: 1px solid #ccc;
+          outline: none;
+          cursor: pointer;
+          padding: 14px 16px;
+          transition: 0.1s;
+          font-size: 20px;
+        }
+
+        /* Change background color of buttons on hover */
+        .tab button:hover {
+          background-color: #ddd;
+        }
+
+        /* Create an active/current tablink class */
+        .tab button.active {
+          background-color: #ccc;
+        }
+
+        /* Style the tab content */
+        .tabcontent {
+          display: none;
+          padding: 6px 12px;
+          border: 1px solid #ccc;
+          border-top: none;
+        }
+        .tabcontent.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<header>
+  <h3><img src = 'static/k8s.ico' style="width:45px;height:45px;"/> K8s HEALTH CHECK UI </h3>
+</header>
+
+
+
+<div class="tab">
+  <button class="tablinks l" onclick="loadresult(event, 'NodeStatus')" id="defaultOpen">NodeStatus</button>
+  <button class="tablinks p" onclick="loadresult(event, 'NodeEvents')">NodeEvents</button>
+  <button class="tablinks t" onclick="loadresult(event, 'Namespaces')">Namespaces</button>
+  <button class="tablinks t" onclick="loadresult(event, 'PodsStatus')">PodsStatus</button>
+  <button class="tablinks t" onclick="loadresult(event, 'CustomCommand')">CustomCommand</button>
+</div>
+
+<div class="tabcontent NodeStatus">
+  <h3>NodeStatus</h3>
+    <table style=" top: 0; bottom: 0; left: 0; right: 0; width: 100%;">
+        {% for key,value in clusterinfo()["NodeStatus"].items(): %}
+          <tr><td width="50%"><b>{{ key }}</b></td><td width="50%">{{ value }} </td></tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="tabcontent Namespaces">
+  <h3>Namespaces</h3>
+    <table style=" top: 0; bottom: 0; left: 0; right: 0; width: 100%;">
+        {% for key,value in clusterinfo()["Namespaces"].items(): %}
+          <tr><td width="50%"><b>{{ key }}</b></td><td width="50%">{{ value }} </td></tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="tabcontent PodsStatus">
+  <h3>PodsStatus</h3>
+    <table style=" top: 0; bottom: 0; left: 0; right: 0; width: 100%;">
+        <td><b>NAMESPACE</b></td><td><b>POD NAME</b></td><td><b>STATUS</b></td>
+        {% for key,value in clusterinfo()["PodsStatus"].items(): %}
+            {% set list1 = key.split('-----') %}
+        <tr><td width="15%">{{ list1[0] }}</td><td width="50%"><b>{{ list1[1] }}</b></td><td width="35%">{{ value }} </td></tr>
+         {% endfor %}
+    </table>
+</div>
+
+<div class="tabcontent NodeEvents">
+  <h3>NodeEvents</h3>
+
+    {% for key,value in clusterinfo()["NodeEvents"].items(): %}
+        <table style=" top: 0; bottom: 0; left: 0; right: 0; width: 100%;">
+          <tr><td><b>{{ key }}</b></td></tr>
+          <tr><td>{{ value }} </td></tr>
+          <br><br>
+      </table>
+    {% endfor %}
+</div>
+
+<div class="tabcontent CustomCommand">
+  <h3>CustomCommand</h3>
+    <input type="text" id="cmd" size="150">
+        <button type="button" id ="retrieve">EXECUTE</button>
+        <div id="CommandResult"></div>
+
+</div>
+
+<script>
+    $(document).ready(function() {
+       $('#retrieve').click(function(){
+           var cmd = $('#cmd').val();
+           $.ajax({
+           url: "/executecmd",
+           type: "get",
+           data: {cmd: cmd},
+           success: function(response) {
+           $("#CommandResult").html(response.html);
+          }
+         });
+       });
+    });
+  </script>
+
+
+<script>
+function loadresult(evt, kubectlaction) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (var i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].classList.remove('show');
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (var i = 0; i < tablinks.length; i++) {
+    tablinks[i].classList.remove('active');
+  }
+  document.getElementsByClassName(kubectlaction)[0].classList.add('show');
+  document.getElementsByClassName(kubectlaction)[1].classList.add('show');
+  var cuttentTabClass = evt.currentTarget.className.split(" ")[1];
+  console.log(cuttentTabClass);
+  document.getElementsByClassName(cuttentTabClass)[0].classList.add('active');
+  document.getElementsByClassName(cuttentTabClass)[1].classList.add('active');
+}
+</script>
+</body>
+
+
